@@ -5,7 +5,19 @@ import pyperclip
 import webbrowser
 import time
 import os
+import sys
 import json
+
+
+def get_coords_path():
+    """Devuelve una ruta escribible para coords.json. En Windows usa %LOCALAPPDATA%\EnvioWhatsApp. """
+    local = os.getenv('LOCALAPPDATA') or os.getenv('APPDATA') or os.path.expanduser("~")
+    base = os.path.join(local, "EnvioWhatsApp")
+    try:
+        os.makedirs(base, exist_ok=True)
+    except Exception:
+        base = os.path.dirname(os.path.abspath(__file__))
+    return os.path.join(base, "coords.json")
 
 def leer_excel(path):
     try:
@@ -32,8 +44,7 @@ def enviar_mensaje(numero, mensaje, delays, archivo=None):
 
     # Haz clic en el área de texto para asegurar el foco
     # Intentar leer coordenada desde coords.json; si no existe, usar valor por defecto
-    base = os.path.dirname(__file__)
-    coords_path = os.path.join(base, "coords.json")
+    coords_path = get_coords_path()
     # ahora las coordenadas deben ser manejadas por el usuario en coords.json
     if not os.path.exists(coords_path):
         raise Exception("coords.json no encontrado. Debes definir la coordenada 'message_bar' usando la interfaz.")
@@ -57,8 +68,7 @@ def enviar_mensaje(numero, mensaje, delays, archivo=None):
         time.sleep(2)
         # Leer coordenadas del clip y del botón de archivo desde coords.json
         # Leer coordenadas del clip y del botón de archivo desde coords.json — el usuario las debe gestionar
-        base = os.path.dirname(__file__)
-        coords_path = os.path.join(base, "coords.json")
+        coords_path = get_coords_path()
         if not os.path.exists(coords_path):
             raise Exception("coords.json no encontrado. Debes definir 'clip' y 'file_button' usando la interfaz.")
         with open(coords_path, "r", encoding="utf-8") as f:

@@ -2,6 +2,17 @@ import pyautogui
 import time
 import json
 import os
+import sys
+
+
+def get_coords_path():
+    local = os.getenv('LOCALAPPDATA') or os.getenv('APPDATA') or os.path.expanduser("~")
+    base = os.path.join(local, "EnvioWhatsApp")
+    try:
+        os.makedirs(base, exist_ok=True)
+    except Exception:
+        base = os.path.dirname(os.path.abspath(__file__))
+    return os.path.join(base, "coords.json")
 
 
 def guardar_coordenada(x, y, key="message_bar"):
