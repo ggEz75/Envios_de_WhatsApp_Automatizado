@@ -35,9 +35,12 @@ class WhatsAppBotApp(ctk.CTk):
         self.setup_ui()
 
     def setup_ui(self):
+        # Contenedor principal con scroll vertical
+        self.main_scroll = ctk.CTkScrollableFrame(master=self, width=660, height=780)
+        self.main_scroll.pack(fill="both", expand=True, padx=10, pady=10)
         # Botón cargar Excel
         self.btn_excel = ctk.CTkButton(
-            master=self,
+            master=self.main_scroll,
             text="📁 Cargar Excel",
             fg_color=self.color_btn,
             hover_color=self.color_btn_hover,
@@ -49,7 +52,7 @@ class WhatsAppBotApp(ctk.CTk):
 
         # Label archivo cargado
         self.lbl_excel = ctk.CTkLabel(
-            master=self,
+            master=self.main_scroll,
             text="Ningún archivo seleccionado.",
             font=("Segoe UI", 12)
         )
@@ -57,13 +60,13 @@ class WhatsAppBotApp(ctk.CTk):
 
         # Label y caja mensaje
         self.lbl_mensaje = ctk.CTkLabel(
-            master=self,
+            master=self.main_scroll,
             text="✍️ Escribe el/los mensaje(s):",
             font=("Segoe UI", 13)
         )
 
         # Scrollable frame para los mensajes y el botón +
-        self.frame_mensajes = ctk.CTkScrollableFrame(master=self, width=640, height=220)
+        self.frame_mensajes = ctk.CTkScrollableFrame(master=self.main_scroll, width=640, height=220)
         self.frame_mensajes.pack(padx=20, fill="x", pady=(0, 10))
 
         self.text_mensajes = []
@@ -82,7 +85,7 @@ class WhatsAppBotApp(ctk.CTk):
         self.agregar_textarea_mensaje()  # Agrega el primer textarea
 
         # Frame para delays
-        self.frame_delays = ctk.CTkFrame(master=self)
+        self.frame_delays = ctk.CTkFrame(master=self.main_scroll)
         self.frame_delays.pack(pady=15, fill="x", padx=20)
 
         self.lbl_delays = ctk.CTkLabel(
@@ -136,7 +139,7 @@ class WhatsAppBotApp(ctk.CTk):
 
     # Empacar el botón de enviar debajo de los segundos por mensaje
         self.btn_enviar = ctk.CTkButton(
-            master=self,
+            master=self.main_scroll,
             text="� Iniciar envío",
             fg_color=self.color_btn,
             hover_color=self.color_btn_hover,
@@ -172,7 +175,7 @@ class WhatsAppBotApp(ctk.CTk):
 
         # Botón seleccionar archivo adjunto
         self.btn_archivo = ctk.CTkButton(
-            master=self,
+            master=self.main_scroll,
             text="� Seleccionar archivo (opcional)",
             fg_color=self.color_btn,
             hover_color=self.color_btn_hover,
@@ -183,7 +186,7 @@ class WhatsAppBotApp(ctk.CTk):
         self.btn_archivo.pack(pady=15, padx=20)
 
         self.lbl_archivo = ctk.CTkLabel(
-            master=self,
+            master=self.main_scroll,
             text="Ningún archivo seleccionado.",
             font=("Segoe UI", 12)
         )
@@ -191,7 +194,7 @@ class WhatsAppBotApp(ctk.CTk):
 
         # Botón para añadir coordenada de la barra de mensaje
         self.btn_coordenada = ctk.CTkButton(
-            master=self,
+            master=self.main_scroll,
             text="📍 Añadir coordenada de BARRA DE MENSAJE",
             fg_color="#4a4a4a",
             hover_color="#5a5a5a",
@@ -202,12 +205,12 @@ class WhatsAppBotApp(ctk.CTk):
         self.btn_coordenada.pack(pady=(5, 15), padx=20)
 
         # Label para mostrar coordenada seleccionada
-        self.lbl_coord = ctk.CTkLabel(master=self, text="Coordenada: (no definida)", font=("Segoe UI", 11))
+        self.lbl_coord = ctk.CTkLabel(master=self.main_scroll, text="Coordenada: (no definida)", font=("Segoe UI", 11))
         self.lbl_coord.pack()
 
         # Botones y labels para coordenadas adicionales (clip y botón de archivo)
         self.btn_coordenada_clip = ctk.CTkButton(
-            master=self,
+            master=self.main_scroll,
             text="📍 Añadir coordenada del CLIP",
             fg_color="#4a4a4a",
             hover_color="#5a5a5a",
@@ -217,11 +220,11 @@ class WhatsAppBotApp(ctk.CTk):
         )
         self.btn_coordenada_clip.pack(pady=(5, 5), padx=20)
 
-        self.lbl_clip = ctk.CTkLabel(master=self, text="Coordenada CLIP: (no definida)", font=("Segoe UI", 11))
+        self.lbl_clip = ctk.CTkLabel(master=self.main_scroll, text="Coordenada CLIP: (no definida)", font=("Segoe UI", 11))
         self.lbl_clip.pack()
 
         self.btn_coordenada_file = ctk.CTkButton(
-            master=self,
+            master=self.main_scroll,
             text="📍 Añadir coordenada del BOTÓN DE ARCHIVO",
             fg_color="#4a4a4a",
             hover_color="#5a5a5a",
@@ -231,7 +234,7 @@ class WhatsAppBotApp(ctk.CTk):
         )
         self.btn_coordenada_file.pack(pady=(5, 15), padx=20)
 
-        self.lbl_file = ctk.CTkLabel(master=self, text="Coordenada BOTÓN ARCHIVO: (no definida)", font=("Segoe UI", 11))
+        self.lbl_file = ctk.CTkLabel(master=self.main_scroll, text="Coordenada BOTÓN ARCHIVO: (no definida)", font=("Segoe UI", 11))
         self.lbl_file.pack()
 
     def agregar_textarea_mensaje(self):
@@ -297,7 +300,7 @@ class WhatsAppBotApp(ctk.CTk):
             self.columnas_dropdown.destroy()
 
         # Dropdown adaptado a customtkinter: colocarlo debajo del area de mensajes con etiqueta explicativa
-        frame_col = ctk.CTkFrame(master=self)
+        frame_col = ctk.CTkFrame(master=self.main_scroll)
         frame_col.pack(pady=10, padx=20, fill="x")
 
         lbl_help = ctk.CTkLabel(master=frame_col, text='Selecciona la columna de Telefono (Formato: Sin "+54 9")', font=("Segoe UI", 11))
