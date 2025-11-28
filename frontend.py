@@ -24,6 +24,9 @@ class WhatsAppBotApp(ctk.CTk):
         self.delay_inputs = []
         self.file_path = None
         self.message_bar_coord = None
+        self.selected_columna = ctk.StringVar() # Inicializar StringVar para la columna seleccionada
+        self.columnas_dropdown = None # Inicializar a None
+
         # Placeholder para las cajas de mensaje
         self.message_placeholder = "También puedes usar campos/datos de las COLUMNAS usando {{A}}, {{B}}, Excluyendo la fila 1(Encabezados)."
 
@@ -57,6 +60,22 @@ class WhatsAppBotApp(ctk.CTk):
             font=("Segoe UI", 12)
         )
         self.lbl_excel.pack()
+
+        # Dropdown adaptado a customtkinter: colocarlo debajo del area de mensajes con etiqueta explicativa
+        self.frame_col = ctk.CTkFrame(master=self.main_scroll)
+        self.frame_col.pack(pady=10, padx=20, fill="x")
+
+        lbl_help = ctk.CTkLabel(master=self.frame_col, text='Selecciona la columna de Telefono (Formato: Sin "+54 9")', font=("Segoe UI", 11))
+        lbl_help.pack(side="left", padx=(0, 12))
+
+        self.columnas_dropdown = ctk.CTkOptionMenu(
+            master=self.frame_col, # Cambiado de self.main_scroll a self.frame_col
+            values=["Cargando..."], # Valores iniciales
+            variable=self.selected_columna,
+            font=("Segoe UI", 12),
+            dropdown_font=("Segoe UI", 12)
+        )
+        self.columnas_dropdown.pack(side="left") # Empaquetar a la izquierda dentro de frame_col
 
         # Label y caja mensaje
         self.lbl_mensaje = ctk.CTkLabel(
@@ -137,10 +156,10 @@ class WhatsAppBotApp(ctk.CTk):
         # Tooltip para botón delays
         _add_tooltip(self.btn_agregar_delay, "Cuando más intervalos tenga, más indetectable será el programa y reducirá el riesgo de bloqueo por spam.")
 
-    # Empacar el botón de enviar debajo de los segundos por mensaje
+        # Empacar el botón de enviar debajo de los segundos por mensaje
         self.btn_enviar = ctk.CTkButton(
             master=self.main_scroll,
-            text="� Iniciar envío",
+            text="🚀 Iniciar envío",
             fg_color=self.color_btn,
             hover_color=self.color_btn_hover,
             corner_radius=15,
@@ -176,7 +195,7 @@ class WhatsAppBotApp(ctk.CTk):
         # Botón seleccionar archivo adjunto
         self.btn_archivo = ctk.CTkButton(
             master=self.main_scroll,
-            text="� Seleccionar archivo (opcional)",
+            text="📎 Seleccionar archivo (opcional)",
             fg_color=self.color_btn,
             hover_color=self.color_btn_hover,
             corner_radius=15,
@@ -294,29 +313,9 @@ class WhatsAppBotApp(ctk.CTk):
             return
 
         columnas = list(self.df.columns)
-        self.selected_columna.set(columnas[0])
+        self.columnas_dropdown.configure(values=columnas) # Actualizar los valores del desplegable
+        self.selected_columna.set(columnas[0]) # Establecer la primera columna como predeterminada
 
-        if self.columnas_dropdown:
-            self.columnas_dropdown.destroy()
-
-        # Dropdown adaptado a customtkinter: colocarlo debajo del area de mensajes con etiqueta explicativa
-        frame_col = ctk.CTkFrame(master=self.main_scroll)
-        frame_col.pack(pady=10, padx=20, fill="x")
-
-        lbl_help = ctk.CTkLabel(master=frame_col, text='Selecciona la columna de Telefono (Formato: Sin "+54 9")', font=("Segoe UI", 11))
-        lbl_help.pack(side="left", padx=(0, 12))
-
-        self.columnas_dropdown = ctk.CTkOptionMenu(
-            master=frame_col,
-            values=columnas,
-            variable=self.selected_columna,
-            font=("Segoe UI", 12),
-            dropdown_font=("Segoe UI", 12)
-        )
-        self.columnas_dropdown.pack(side="left")
-
-        self.lbl_mensaje.pack(pady=(10, 5), padx=20)
-        self.frame_mensajes.pack(padx=20, fill="x")
         # Limpiar textareas previos y agregar uno nuevo
         for t in self.text_mensajes:
             t.destroy()

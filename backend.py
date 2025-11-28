@@ -10,14 +10,8 @@ import json
 
 
 def get_coords_path():
-    """Devuelve una ruta escribible para coords.json. En Windows usa %LOCALAPPDATA%\EnvioWhatsApp. """
-    local = os.getenv('LOCALAPPDATA') or os.getenv('APPDATA') or os.path.expanduser("~")
-    base = os.path.join(local, "EnvioWhatsApp")
-    try:
-        os.makedirs(base, exist_ok=True)
-    except Exception:
-        base = os.path.dirname(os.path.abspath(__file__))
-    return os.path.join(base, "coords.json")
+    """Devuelve la ruta para coords.json en el mismo directorio que este script."""
+    return os.path.join(os.path.dirname(os.path.abspath(__file__)), "coords.json")
 
 def leer_excel(path):
     try:
