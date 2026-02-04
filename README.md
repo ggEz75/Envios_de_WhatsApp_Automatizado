@@ -1,10 +1,10 @@
 # Envío de WhatsApp Automático
 
-Este proyecto es una herramienta para enviar mensajes de WhatsApp automáticamente desde un archivo Excel. La aplicación proporciona una interfaz gráfica para: cargar un archivo Excel, definir mensajes (con soporte para placeholders {{A}}, {{B}}, ...), capturar coordenadas en pantalla (barra de mensajes, icono "clip", botón de archivo), y ejecutar el envío automático mediante la app de WhatsApp Desktop.
+Este proyecto es una herramienta para enviar mensajes de WhatsApp automáticamente desde un archivo Excel. La aplicación proporciona una interfaz gráfica para: cargar un archivo Excel, definir mensajes (con soporte para placeholders {{A}}, {{B}}, ...), capturar la coordenada de la barra de mensajes en pantalla, y ejecutar el envío automático mediante la app de WhatsApp Desktop.
 
 Contenido
 - `frontend.py`: Interfaz gráfica (CustomTkinter). Permite capturar coordenadas y configurar mensajes y tiempos.
-- `backend.py`: Lógica de envío: abre el chat de WhatsApp, pega el mensaje y, opcionalmente, adjunta un archivo.
+- `backend.py`: Lógica de envío: abre el chat de WhatsApp y pega el mensaje.
 - `coordenada.py`: Utilidad CLI para capturar coordenadas desde la consola (presiona Ctrl+C para guardar la coordenada en `coords.json`).
 - `coords.json`: Archivo JSON donde se guardan las coordenadas capturadas por la interfaz. (No debe versionarse si contiene datos sensibles).
 
@@ -37,11 +37,10 @@ python frontend.py
 ```
 
 2. En la ventana principal:
-- Pulsa "📍 Añadir coordenada de BARRA DE MENSAJE" y usa la ventana emergente para capturar la coordenada. Coloca el cursor sobre la barra de texto de WhatsApp y presiona el botón "Capturar en 10s" (o presiona F8/F9 para iniciar la cuenta regresiva). Repite para "CLIP" y "BOTÓN DE ARCHIVO" si quieres adjuntar archivos.
+- Pulsa "📍 Añadir coordenada de BARRA DE MENSAJE" y usa la ventana emergente para capturar la coordenada. Coloca el cursor sobre la barra de texto de WhatsApp y presiona el botón "Capturar en 10s" (o presiona F8/F9 para iniciar la cuenta regresiva).
 - Carga tu archivo Excel con el botón "📁 Cargar Excel". Selecciona la columna que contiene los números (sin +54 9) en el dropdown.
 - Escribe los mensajes en los textareas. Puedes usar placeholders: `{{A}}`, `{{B}}`, ... para sustituir por valores de columnas (A = primera columna, B = segunda, etc.).
 - Define los retrasos (en segundos) en la sección "Segundos por mensaje". Puedes añadir varios valores para rotarlos y reducir detectabilidad.
-- Si vas a adjuntar un archivo, selecciónalo con "📌 Seleccionar archivo (opcional)".
 - Pulsa "Iniciar envío". La app abrirá cada chat y enviará los mensajes.
 
 Notas de seguridad y permisos
@@ -57,9 +56,7 @@ Archivo `coords.json`
 
 ```json
 {
-  "message_bar": [587, 1013],
-  "clip": [560, 950],
-  "file_button": [610, 940]
+  "message_bar": [587, 1013]
 }
 ```
 

@@ -10,13 +10,8 @@ import json
 
 
 def get_coords_path():
-    """Devuelve una ruta escribible para coords.json. En Windows usa %LOCALAPPDATA%\EnvioWhatsApp. """
-    local = os.getenv('LOCALAPPDATA') or os.getenv('APPDATA') or os.path.expanduser("~")
-    base = os.path.join(local, "EnvioWhatsApp")
-    try:
-        os.makedirs(base, exist_ok=True)
-    except Exception:
-        base = os.path.dirname(os.path.abspath(__file__))
+    """Devuelve la ruta para coords.json en el directorio del script."""
+    base = os.path.dirname(os.path.abspath(__file__))
     return os.path.join(base, "coords.json")
 
 def leer_excel(path):
@@ -33,7 +28,7 @@ def generar_mensaje(template, row):
         mensaje = mensaje.replace(placeholder, str(valor))
     return mensaje
 
-def enviar_mensaje(numero, mensaje, delays, archivo=None):
+def enviar_mensaje(numero, mensaje, delays):
     if not numero.startswith('+'):
         numero = '+54' + numero
     numero_sin_mas = numero.replace('+', '')
@@ -42,10 +37,7 @@ def enviar_mensaje(numero, mensaje, delays, archivo=None):
     webbrowser.open(f"whatsapp://send?phone={numero_sin_mas}")
     time.sleep(3)  # Espera para que se abra el chat
 
-    # Haz clic en el área de texto para asegurar el foco
-    # Intentar leer coordenada desde coords.json; si no existe, usar valor por defecto
     coords_path = get_coords_path()
-    # ahora las coordenadas deben ser manejadas por el usuario en coords.json
     if not os.path.exists(coords_path):
         raise Exception("coords.json no encontrado. Debes definir la coordenada 'message_bar' usando la interfaz.")
     with open(coords_path, "r", encoding="utf-8") as f:
@@ -64,44 +56,7 @@ def enviar_mensaje(numero, mensaje, delays, archivo=None):
 
     pyautogui.press("enter")
 
-    if archivo:
-        time.sleep(2)
-        # Leer coordenadas del clip y del botón de archivo desde coords.json
-        # Leer coordenadas del clip y del botón de archivo desde coords.json — el usuario las debe gestionar
-        coords_path = get_coords_path()
-        if not os.path.exists(coords_path):
-            raise Exception("coords.json no encontrado. Debes definir 'clip' y 'file_button' usando la interfaz.")
-        with open(coords_path, "r", encoding="utf-8") as f:
-            data = json.load(f)
-        c = data.get("clip")
-        fbtn = data.get("file_button")
-        if not (c and isinstance(c, (list, tuple)) and len(c) >= 2):
-            raise Exception("Coordenada 'clip' inválida o no encontrada en coords.json. Usa la interfaz para configurarla.")
-        if not (fbtn and isinstance(fbtn, (list, tuple)) and len(fbtn) >= 2):
-            raise Exception("Coordenada 'file_button' inválida o no encontrada en coords.json. Usa la interfaz para configurarla.")
-        clip_coord = (int(c[0]), int(c[1]))
-        file_button_coord = (int(fbtn[0]), int(fbtn[1]))
-
-        pyautogui.click(x=clip_coord[0], y=clip_coord[1])  # Coordenadas del clip
-        time.sleep(1)
-        # Hacer DOS clics en el botón de archivo (para probar doble-clic)
-        try:
-            pyautogui.click(x=file_button_coord[0], y=file_button_coord[1], clicks=2, interval=0.2)
-        except TypeError:
-            # Si la versión de pyautogui no soporta clicks arg, hacer dos clicks manuales
-            pyautogui.click(x=file_button_coord[0], y=file_button_coord[1])
-            time.sleep(0.2)
-            pyautogui.click(x=file_button_coord[0], y=file_button_coord[1])
-        time.sleep(2)
-
-        pyperclip.copy(os.path.basename(archivo))
-        pyautogui.hotkey("ctrl", "v")
-        time.sleep(1)
-        pyautogui.press("enter")
-        time.sleep(1)
-        pyautogui.press("enter")
-
-def enviar_mensajes(df, columna_numeros, mensajes, delays, archivo=None):
+def enviar_mensajes(df, columna_numeros, mensajes, delays):
     delay_index = 0
     num_mensajes = len(mensajes)
     for idx, (index, row) in enumerate(df.iterrows()):
@@ -110,7 +65,7 @@ def enviar_mensajes(df, columna_numeros, mensajes, delays, archivo=None):
             # Selecciona el mensaje correspondiente de la lista, en modo cíclico
             template = mensajes[idx % num_mensajes]
             mensaje = generar_mensaje(template, row)
-            enviar_mensaje(numero, mensaje, delays, archivo)
+            enviar_mensaje(numero, mensaje, delays)
             delay = delays[delay_index]
             print(f"Esperando {delay} segundos...")
             time.sleep(delay)

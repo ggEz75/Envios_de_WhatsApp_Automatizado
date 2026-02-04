@@ -6,7 +6,7 @@ import threading
 import time
 import json
 import pyautogui
-from backend import leer_excel, enviar_mensajes
+from backend import leer_excel, enviar_mensajes, get_coords_path
 
 # Configuramos tema oscuro global
 ctk.set_appearance_mode("dark")
@@ -22,7 +22,6 @@ class WhatsAppBotApp(ctk.CTk):
 
         self.df = None
         self.delay_inputs = []
-        self.file_path = None
         self.message_bar_coord = None
         # Placeholder para las cajas de mensaje
         self.message_placeholder = "También puedes usar campos/datos de las COLUMNAS usando {{A}}, {{B}}, Excluyendo la fila 1(Encabezados)."
@@ -152,16 +151,14 @@ class WhatsAppBotApp(ctk.CTk):
         # Validación de coordenadas: si faltan, deshabilitar botón de envío
         def coords_exist():
             try:
-                base = os.path.dirname(__file__)
-                path = os.path.join(base, "coords.json")
+                path = get_coords_path()
                 if not os.path.exists(path):
                     return False
                 with open(path, "r", encoding="utf-8") as f:
                     data = json.load(f)
-                for k in ("message_bar", "clip", "file_button"):
-                    v = data.get(k)
-                    if not (v and isinstance(v, (list, tuple)) and len(v) >= 2):
-                        return False
+                mb = data.get("message_bar")
+                if not (mb and isinstance(mb, (list, tuple)) and len(mb) >= 2):
+                    return False
                 return True
             except Exception:
                 return False
@@ -172,25 +169,6 @@ class WhatsAppBotApp(ctk.CTk):
 
         # Tooltip para botón agregar mensaje
         _add_tooltip(self.btn_agregar_mensaje, "Agregar más mensajes diferentes ayuda a evitar la detección de spam y reduce el riesgo de bloqueo del número.")
-
-        # Botón seleccionar archivo adjunto
-        self.btn_archivo = ctk.CTkButton(
-            master=self.main_scroll,
-            text="� Seleccionar archivo (opcional)",
-            fg_color=self.color_btn,
-            hover_color=self.color_btn_hover,
-            corner_radius=15,
-            font=("Segoe UI", 14, "bold"),
-            command=self.seleccionar_archivo
-        )
-        self.btn_archivo.pack(pady=15, padx=20)
-
-        self.lbl_archivo = ctk.CTkLabel(
-            master=self.main_scroll,
-            text="Ningún archivo seleccionado.",
-            font=("Segoe UI", 12)
-        )
-        self.lbl_archivo.pack()
 
         # Botón para añadir coordenada de la barra de mensaje
         self.btn_coordenada = ctk.CTkButton(
@@ -207,35 +185,6 @@ class WhatsAppBotApp(ctk.CTk):
         # Label para mostrar coordenada seleccionada
         self.lbl_coord = ctk.CTkLabel(master=self.main_scroll, text="Coordenada: (no definida)", font=("Segoe UI", 11))
         self.lbl_coord.pack()
-
-        # Botones y labels para coordenadas adicionales (clip y botón de archivo)
-        self.btn_coordenada_clip = ctk.CTkButton(
-            master=self.main_scroll,
-            text="📍 Añadir coordenada del CLIP",
-            fg_color="#4a4a4a",
-            hover_color="#5a5a5a",
-            corner_radius=12,
-            font=("Segoe UI", 12, "bold"),
-            command=lambda: self.abrir_ventana_coordenada(key="clip", label_widget=self.lbl_clip, title="Capturar coordenada del CLIP")
-        )
-        self.btn_coordenada_clip.pack(pady=(5, 5), padx=20)
-
-        self.lbl_clip = ctk.CTkLabel(master=self.main_scroll, text="Coordenada CLIP: (no definida)", font=("Segoe UI", 11))
-        self.lbl_clip.pack()
-
-        self.btn_coordenada_file = ctk.CTkButton(
-            master=self.main_scroll,
-            text="📍 Añadir coordenada del BOTÓN DE ARCHIVO",
-            fg_color="#4a4a4a",
-            hover_color="#5a5a5a",
-            corner_radius=12,
-            font=("Segoe UI", 12, "bold"),
-            command=lambda: self.abrir_ventana_coordenada(key="file_button", label_widget=self.lbl_file, title="Capturar coordenada del BOTÓN DE ARCHIVO")
-        )
-        self.btn_coordenada_file.pack(pady=(5, 15), padx=20)
-
-        self.lbl_file = ctk.CTkLabel(master=self.main_scroll, text="Coordenada BOTÓN ARCHIVO: (no definida)", font=("Segoe UI", 11))
-        self.lbl_file.pack()
 
     def agregar_textarea_mensaje(self):
         # Crea un nuevo textarea y lo agrega al frame
@@ -335,12 +284,6 @@ class WhatsAppBotApp(ctk.CTk):
         entry.grid(row=0, column=col_index, padx=5, pady=5)
         self.delay_inputs.append(entry)
 
-    def seleccionar_archivo(self):
-        archivo = filedialog.askopenfilename(filetypes=[("Todos los archivos", "*.*")])
-        if archivo:
-            self.file_path = archivo
-            self.lbl_archivo.configure(text=f"📌 Archivo: {os.path.basename(archivo)}")
-
     def abrir_ventana_coordenada(self, key="message_bar", label_widget=None, title="Capturar coordenada"):
         """Abre una ventana que muestra la posición del mouse en vivo y permite capturarla.
         Guarda la coordenada en coords.json bajo la llave `key` y actualiza la label pasada en `label_widget`.
@@ -376,8 +319,7 @@ class WhatsAppBotApp(ctk.CTk):
             x, y = pyautogui.position()
             # guardar en coords.json en el directorio del script
             try:
-                base = os.path.dirname(__file__)
-                path = os.path.join(base, "coords.json")
+                path = get_coords_path()
                 data = {}
                 if os.path.exists(path):
                     try:
@@ -396,19 +338,13 @@ class WhatsAppBotApp(ctk.CTk):
                     label_widget.configure(text=f"{title}: {(int(x), int(y))}", text_color="#2ecc71")
                 except Exception:
                     label_widget.configure(text=f"{title}: {(int(x), int(y))}")
-            # si ya existen todas las coords, habilitar el botón de envío
+            # si ya existe message_bar, habilitar el botón de envío
             try:
-                base = os.path.dirname(__file__)
-                path = os.path.join(base, "coords.json")
+                path = get_coords_path()
                 with open(path, "r", encoding="utf-8") as f:
                     data = json.load(f)
-                ok = True
-                for k in ("message_bar", "clip", "file_button"):
-                    v = data.get(k)
-                    if not (v and isinstance(v, (list, tuple)) and len(v) >= 2):
-                        ok = False
-                        break
-                if ok:
+                mb = data.get("message_bar")
+                if mb and isinstance(mb, (list, tuple)) and len(mb) >= 2:
                     try:
                         self.btn_enviar.configure(state="normal")
                     except Exception:
@@ -490,7 +426,7 @@ class WhatsAppBotApp(ctk.CTk):
             messagebox.showwarning("Atención", "Debes ingresar al menos un tiempo válido de espera.")
             return
 
-        enviar_mensajes(self.df, columna, mensajes, delays, self.file_path)
+        enviar_mensajes(self.df, columna, mensajes, delays)
         messagebox.showinfo("Completado", "✅ Todos los mensajes fueron enviados.")
 
 if __name__ == "__main__":
