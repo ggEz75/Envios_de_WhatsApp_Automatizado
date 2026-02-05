@@ -10,41 +10,54 @@ param(
 $ProjectRoot = Split-Path -Parent $MyInvocation.MyCommand.Definition
 Set-Location $ProjectRoot
 
+$VenvActivated = $false
 if ($InstallRequirements) {
     Write-Host "Creando virtualenv .venv y instalando dependencias..."
     python -m venv .venv
     .\.venv\Scripts\Activate.ps1
+    $VenvActivated = $true
     pip install --upgrade pip
     if (Test-Path requirements.txt) {
         pip install -r requirements.txt
     }
+    pip install pyinstaller
+} elseif (Test-Path ".venv\Scripts\Activate.ps1") {
+    Write-Host "Activando venv existente..."
+    .\.venv\Scripts\Activate.ps1
+    $VenvActivated = $true
 }
 
 # Nombre del script principal
 $MainScript = "frontend.py"
 $Icon = "icono.ico"
 
-# Archivos adicionales a incluir
-$AddData = @()
-# coords.json puede residir en la carpeta del proyecto; se incluirá para la primera ejecución
-if (Test-Path "coords.json") {
-    # PyInstaller syntax on Windows: "src;dest"
-    $AddData += "coords.json;."
-}
+# Comando PyInstaller base
+$PyInstallerArgs = @(
+    "--noconsole",
+    "--onefile",
+    "--clean",
+    "--name", "EnvioWhatsApp"
+)
+
+# Agregar icono si existe
 if (Test-Path $Icon) {
-    $AddData += "$Icon;."
+    $PyInstallerArgs += "--icon=$Icon"
+    Write-Host "Icono encontrado: $Icon"
+} else {
+    Write-Host "Advertencia: No se encontró icono.ico, se generará sin icono personalizado."
 }
 
-# Construir la cadena --add-data
-$AddDataArgs = ""
-foreach ($d in $AddData) {
-    $AddDataArgs += " --add-data `"$d`""
-}
+# Agregar el script principal
+$PyInstallerArgs += $MainScript
 
-# Comando PyInstaller
-$PyInstallerCmd = "pyinstaller --noconsole --onefile --clean --name EnvioWhatsApp --icon=`"$Icon`" $AddDataArgs $MainScript"
-Write-Host "Ejecutando: $PyInstallerCmd"
-Invoke-Expression $PyInstallerCmd
+# Ejecutar PyInstaller
+Write-Host "Ejecutando PyInstaller..."
+Write-Host "Comando: pyinstaller $($PyInstallerArgs -join ' ')"
+if ($VenvActivated) {
+    & pyinstaller @PyInstallerArgs
+} else {
+    & pyinstaller @PyInstallerArgs
+}
 
 # Copiar README y requirements al dist para que el exe distribuido tenga documentación
 $DistDir = Join-Path $ProjectRoot "dist"

@@ -22,6 +22,8 @@ class WhatsAppBotApp(ctk.CTk):
 
         self.df = None
         self.delay_inputs = []
+        self.selected_columna = ctk.StringVar(value="")
+        self.columnas_dropdown = None
         self.message_bar_coord = None
         # Placeholder para las cajas de mensaje
         self.message_placeholder = "También puedes usar campos/datos de las COLUMNAS usando {{A}}, {{B}}, Excluyendo la fila 1(Encabezados)."
