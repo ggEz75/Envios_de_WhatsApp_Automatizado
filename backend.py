@@ -5,107 +5,124 @@ import webbrowser
 import time
 import os
 import json
+from datetime import datetime
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+ASSETS_DIR = os.path.join(BASE_DIR, "assets")
+
+IMG_REFERENCIAS = [
+    os.path.join(ASSETS_DIR, "numero_no_whatsapp_light.png"),
+    os.path.join(ASSETS_DIR, "numero_no_whatsapp_dark.png"),
+]
+
+INVALID_LOG = os.path.join(BASE_DIR, "numeros_invalidos.txt")
 
 
 # =========================
-# Configuración
+# UTILIDADES
 # =========================
 
-ASSETS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
-IMG_NUMERO_NO_WHATSAPP = os.path.join(ASSETS_DIR, "numero_no_whatsapp.png")
+def normalizar_numero(numero):
+    numero = ''.join(filter(str.isdigit, numero))
+    if not numero.startswith("54"):
+        numero = "54" + numero
+    return "+" + numero
 
 
-# =========================
-# Utilidades
-# =========================
+def log_numero_invalido(numero):
+    with open(INVALID_LOG, "a", encoding="utf-8") as f:
+        f.write(f"{datetime.now()} - {numero}\n")
+
 
 def get_coords_path():
-    """Devuelve la ruta para coords.json en el directorio del script."""
-    base = os.path.dirname(os.path.abspath(__file__))
-    return os.path.join(base, "coords.json")
+    return os.path.join(BASE_DIR, "coords.json")
 
 
 def leer_excel(path):
-    try:
-        df = pd.read_excel(path)
-        return df
-    except Exception as e:
-        raise Exception(f"No se pudo leer el Excel: {e}")
+    return pd.read_excel(path)
 
 
 def generar_mensaje(template, row):
     mensaje = template
-    # Usamos el orden real de las columnas para evitar errores silenciosos
     for i, col in enumerate(row.index):
-        placeholder = f"{{{{{chr(65+i)}}}}}"  # {{A}}, {{B}}, ...
+        placeholder = f"{{{{{chr(65+i)}}}}}"
         mensaje = mensaje.replace(placeholder, str(row[col]))
     return mensaje
 
 
 # =========================
-# Detección visual
+# DETECCIÓN VISUAL CON ESPERA INTELIGENTE
 # =========================
 
-def numero_no_existe():
+def esperar_y_detectar(timeout=5, confidence=0.7):
     """
-    Devuelve True si aparece el popup de
-    'El número no está en WhatsApp'
+    Espera hasta 'timeout' segundos buscando la imagen.
+    Si la encuentra devuelve True.
+    Si no aparece devuelve False.
     """
-    try:
-        return pyautogui.locateOnScreen(
-            IMG_NUMERO_NO_WHATSAPP,
-            confidence=0.8
-        ) is not None
-    except Exception:
-        return False
+    start = time.time()
+
+    while time.time() - start < timeout:
+        for img in IMG_REFERENCIAS:
+            if not os.path.exists(img):
+                raise Exception(f"No se encontró imagen de referencia: {img}")
+
+            try:
+                location = pyautogui.locateOnScreen(img, confidence=confidence)
+                if location is not None:
+                    return True
+            except:
+                continue
+
+        time.sleep(0.5)
+
+    return False
 
 
 # =========================
-# Envío de mensajes
+# ENVÍO
 # =========================
 
 def enviar_mensaje(numero, mensaje, delays):
-    if not numero.startswith('+'):
-        numero = '+54' + numero
 
-    numero_sin_mas = numero.replace('+', '')
+    numero = normalizar_numero(numero)
+    numero_sin_mas = numero.replace("+", "")
+
     print(f"📨 Intentando enviar a {numero}...")
 
-    # Abrir chat
     webbrowser.open(f"whatsapp://send?phone={numero_sin_mas}")
-    time.sleep(3)
+    time.sleep(3)  # ritmo humano
 
-    # ⛔ Detección de número inexistente
-    if numero_no_existe():
-        print(f"❌ El número {numero} no tiene WhatsApp. Se omite.")
-        # cerrar popup (Enter equivale a OK)
-        pyautogui.press("enter")
+    # 🔍 Espera inteligente
+    if esperar_y_detectar():
+        print(f"❌ {numero} no tiene WhatsApp. Se omite.")
+        log_numero_invalido(numero)
+        pyautogui.press("enter")  # cerrar popup
         time.sleep(1)
         return
 
-    # Cargar coordenadas
+    # Fail safe: si no pudo validar referencias
+    for img in IMG_REFERENCIAS:
+        if not os.path.exists(img):
+            print("⚠️ No se pudo validar imágenes. Cancelando envío por seguridad.")
+            return
+
     coords_path = get_coords_path()
     if not os.path.exists(coords_path):
-        raise Exception(
-            "coords.json no encontrado. Debes definir la coordenada 'message_bar' usando la interfaz."
-        )
+        raise Exception("coords.json no encontrado.")
 
     with open(coords_path, "r", encoding="utf-8") as f:
         data = json.load(f)
 
     mb = data.get("message_bar")
-    if not (mb and isinstance(mb, (list, tuple)) and len(mb) >= 2):
-        raise Exception(
-            "Coordenada 'message_bar' inválida o no encontrada en coords.json."
-        )
+    if not mb or len(mb) < 2:
+        raise Exception("Coordenada 'message_bar' inválida.")
 
     px, py = int(mb[0]), int(mb[1])
 
-    # Click en la barra de mensaje
-    pyautogui.click(x=px, y=py)
+    pyautogui.click(px, py)
     time.sleep(2)
 
-    # Escribir y enviar mensaje
     pyperclip.copy(mensaje)
     pyautogui.hotkey("ctrl", "v")
     time.sleep(1)
@@ -116,12 +133,11 @@ def enviar_mensaje(numero, mensaje, delays):
 
 def enviar_mensajes(df, columna_numeros, mensajes, delays):
     delay_index = 0
-    num_mensajes = len(mensajes)
 
     for idx, (_, row) in enumerate(df.iterrows()):
         try:
             numero = str(row[columna_numeros]).strip()
-            template = mensajes[idx % num_mensajes]
+            template = mensajes[idx % len(mensajes)]
             mensaje = generar_mensaje(template, row)
 
             enviar_mensaje(numero, mensaje, delays)
